@@ -1,20 +1,41 @@
-const router = require('express').Router()
-const db = require("../models")
-const bcrypt = require('bcrypt')
+const router = require("express").Router();
+const db = require("../models");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-const { User } = db
+const { User } = db;
 
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
+  let user = await User.findOne({
+    where: { email: req.body.email },
+  });
 
+  if (
+    !user ||
+    !(await bcrypt.compare(req.body.password, user.passwordDigest))
+  ) {
+    res.status(404).json({
+      message: `Could not find a user with the provided username and password`,
+    });
+  } else {
+    const result = await jwt.encode(process.env.JWT_SECRET, {
+      id: user.userid,
+    });
+    res.json({ user: user, token: result.value });
+  }
+});
+
+router.get("/profile", async (req, res) => {
+  try {
     let user = await User.findOne({
-        where: { email: req.body.email }
-    })
+      where: {
+        userId: as,
+      },
+    });
+    res.json(user);
+  } catch {
+    res.json(null);
+  }
+});
 
-    if (!user || !await bcrypt.compare(req.body.password, user.passwordDigest)) {
-        res.status(404).json({ message: `Could not find a user with the provided username and password` })
-    } else {
-        res.json({ user })
-    }
-})
-
-module.exports = router
+module.exports = router;
