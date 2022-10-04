@@ -19,20 +19,30 @@ router.post("/", async (req, res) => {
     });
   } else {
     const result = await jwt.encode(process.env.JWT_SECRET, {
-      id: user.userid,
+      id: user.userId,
     });
+
     res.json({ user: user, token: result.value });
   }
 });
 
 router.get("/profile", async (req, res) => {
   try {
-    let user = await User.findOne({
-      where: {
-        userId: as,
-      },
-    });
-    res.json(user);
+    const [authenticationMethod, token] = req.headers.authorization.split(" ");
+
+    if (authenticationMethod == "Bearer") {
+      const result = await jwt.decode(process.env.JWT_SECRET, token);
+
+      const { id } = result.value;
+      console.log(result);
+
+      let user = await User.findOne({
+        where: {
+          userId: id,
+        },
+      });
+      res.json(user);
+    }
   } catch {
     res.json(null);
   }
